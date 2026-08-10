@@ -72,3 +72,22 @@ SEMESTER_2_MT = [
     {"id": "s2_mt3", "title": "O'smalarga qarshi vositalar"},
     {"id": "s2_mt4", "title": "Gijjalarga qarshi vositalar"}
 ]
+
+# OXTA (Topografik Anatomiya va Operativ Xirurgiya) mavzulari
+OXTA_TOPICS = [
+    {"id": "1", "title": "1-mavzu: Kirish va jarrohlik asboblari"},
+    {"id": "2", "title": "2-mavzu: Qo'l topografik anatomiyasi"},
+    {"id": "3", "title": "3-mavzu: Oyoq topografik anatomiyasi"},
+    {"id": "4", "title": "4-mavzu: Qo'l va oyoq operativ xirurgiyasi"},
+    {"id": "5", "title": "5-mavzu: Amputatsiya va ekzartikulyatsiya"},
+    {"id": "6", "title": "6-mavzu: Bosh (miya qismi) xirurgiyasi"},
+    {"id": "7", "title": "7-mavzu: Bosh (yuz qismi) xirurgiyasi"},
+    {"id": "8", "title": "8-mavzu: Bo'yin sohasi xirurgiyasi"},
+    {"id": "9", "title": "9-mavzu: Ko'krak qafasi xirurgiyasi"},
+    {"id": "10", "title": "10-mavzu: Ko'krak bo'shlig'i a'zolari"},
+    {"id": "11", "title": "11-mavzu: Qorin sohasi xirurgiyasi"},
+    {"id": "12", "title": "12-mavzu: Qorin bo'shlig'i a'zolari"},
+    {"id": "13", "title": "13-mavzu: Ichaklar operativ xirurgiyasi"},
+    {"id": "14", "title": "14-mavzu: Bel va qorin parda orti sohasi"},
+    {"id": "15", "title": "15-mavzu: Tos sohasi anatomiyasi"},
+]

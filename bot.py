@@ -84,7 +84,7 @@ def send_welcome(message):
     
     # Check subscription
     if is_subscribed(message.from_user.id):
-        send_subject_selection(message.chat.id)
+        send_category_selection(message.chat.id)
     else:
         send_subscription_request(message.chat.id)
 
@@ -111,13 +111,13 @@ def send_subscription_request(chat_id):
         
     bot.send_message(chat_id, text, reply_markup=markup)
 
-# Send Subject Selection Menu
-def send_subject_selection(chat_id, message_id=None):
-    text = "Qaysi fanni o'rganishni xohlaysiz?"
-    
+# Send Category Selection Menu
+def send_category_selection(chat_id, message_id=None):
+    text = "Yo'nalishni tanlang:"
     markup = types.InlineKeyboardMarkup()
-    btn_farma = types.InlineKeyboardButton("💊 Farmakologiya", callback_data="subject_farmakologiya")
-    markup.add(btn_farma)
+    btn_fundamental = types.InlineKeyboardButton("📚 Fundamental fanlar", callback_data="category_fundamental")
+    btn_klinik = types.InlineKeyboardButton("🩺 Klinik fanlar", callback_data="category_klinik")
+    markup.row(btn_fundamental, btn_klinik)
     
     if message_id:
         try:
@@ -126,6 +126,24 @@ def send_subject_selection(chat_id, message_id=None):
             bot.send_message(chat_id, text, reply_markup=markup)
     else:
         bot.send_message(chat_id, text, reply_markup=markup)
+
+# Send Subject Selection Menu
+def send_subject_selection(chat_id, message_id, category):
+    markup = types.InlineKeyboardMarkup()
+    
+    if category == "fundamental":
+        text = "Fanni tanlang:"
+        btn_farma = types.InlineKeyboardButton("💊 Farmakologiya", callback_data="subject_farmakologiya")
+        btn_oxta = types.InlineKeyboardButton("🔪 OXTA", callback_data="subject_oxta")
+        markup.add(btn_farma)
+        markup.add(btn_oxta)
+    else:
+        text = "Klinik fanlar bo'yicha ma'lumotlar tez kunda qo'shiladi."
+        
+    btn_back = types.InlineKeyboardButton("⬅️ Orqaga", callback_data="back_to_category")
+    markup.add(btn_back)
+    
+    bot.edit_message_text(text, chat_id, message_id, reply_markup=markup)
 
 # Send Semester Selection Menu
 def send_semester_selection(chat_id, message_id):
@@ -170,7 +188,26 @@ def send_topics_menu(chat_id, message_id, semester):
         btn = types.InlineKeyboardButton(topic["title"], callback_data=f"topic_{topic['id']}")
         markup.add(btn)
         
-    btn_back = types.InlineKeyboardButton("⬅️ Orqaga", callback_data="back_to_semester")
+    btn_back = types.InlineKeyboardButton("⬅️ Orqaga", callback_data="back_to_subject")
+    markup.add(btn_back)
+    
+    bot.edit_message_text(text, chat_id, message_id, reply_markup=markup, parse_mode='HTML')
+
+# Send OXTA Menu
+def send_oxta_menu(chat_id, message_id):
+    text = "<b>OXTA (Topografik Anatomiya va Operativ Xirurgiya)</b>\n\nMavzuni tanlang:"
+    markup = types.InlineKeyboardMarkup()
+    
+    # Adabiyotlar at the top
+    btn_adabiyotlar = types.InlineKeyboardButton("📚 Adabiyotlar", callback_data="topic_oxta_adabiyotlar")
+    markup.add(btn_adabiyotlar)
+    
+    # Add OXTA topics (one per row due to long text)
+    for topic in config.OXTA_TOPICS:
+        btn = types.InlineKeyboardButton(topic["title"], callback_data=f"topic_oxta_mavzu{topic['id']}")
+        markup.add(btn)
+        
+    btn_back = types.InlineKeyboardButton("⬅️ Orqaga", callback_data="back_to_fundamental")
     markup.add(btn_back)
     
     bot.edit_message_text(text, chat_id, message_id, reply_markup=markup, parse_mode='HTML')
@@ -201,7 +238,7 @@ def callback_handler(call):
                 bot.delete_message(chat_id, message_id)
             except Exception:
                 pass
-            send_subject_selection(chat_id)
+            send_category_selection(chat_id)
         else:
             bot.answer_callback_query(
                 call.id, 
@@ -209,35 +246,63 @@ def callback_handler(call):
                 show_alert=True
             )
             
-    # 2. Main menu (subject)
+    # 2. Main menu (Category)
+    elif call.data == "back_to_category":
+        if not is_subscribed(user_id):
+            send_subscription_request(chat_id)
+            return
+        send_category_selection(chat_id, message_id)
+        
+    # 3. Category -> Fundamental
+    elif call.data == "category_fundamental" or call.data == "back_to_fundamental":
+        if not is_subscribed(user_id):
+            send_subscription_request(chat_id)
+            return
+        send_subject_selection(chat_id, message_id, "fundamental")
+        
+    # 4. Category -> Klinik
+    elif call.data == "category_klinik":
+        if not is_subscribed(user_id):
+            send_subscription_request(chat_id)
+            return
+        send_subject_selection(chat_id, message_id, "klinik")
+
+    # 5. Back to Subject (Farmakologiya uses this)
     elif call.data == "back_to_subject":
         if not is_subscribed(user_id):
             send_subscription_request(chat_id)
             return
-        send_subject_selection(chat_id, message_id)
+        send_subject_selection(chat_id, message_id, "fundamental")
         
-    # 3. Subject selected -> Semesters
+    # 6. Subject -> Farmakologiya
     elif call.data == "subject_farmakologiya":
         if not is_subscribed(user_id):
             send_subscription_request(chat_id)
             return
         send_semester_selection(chat_id, message_id)
         
-    # 4. Back to Semesters
+    # 7. Subject -> OXTA
+    elif call.data == "subject_oxta":
+        if not is_subscribed(user_id):
+            send_subscription_request(chat_id)
+            return
+        send_oxta_menu(chat_id, message_id)
+        
+    # Back to Semesters
     elif call.data == "back_to_semester":
         if not is_subscribed(user_id):
             send_subscription_request(chat_id)
             return
         send_semester_selection(chat_id, message_id)
         
-    # 5. Semester 1 selected
+    # Semester 1 selected
     elif call.data == "semester_1":
         if not is_subscribed(user_id):
             send_subscription_request(chat_id)
             return
         send_topics_menu(chat_id, message_id, semester=1)
         
-    # 6. Semester 2 selected
+    # Semester 2 selected
     elif call.data == "semester_2":
         if not is_subscribed(user_id):
             send_subscription_request(chat_id)
@@ -292,9 +357,11 @@ def callback_handler(call):
         if success_count == 0:
             bot.send_message(chat_id, "Manbalarni yuborishda xatolik yuz berdi. Iltimos, keyinroq urunib ko'ring.")
         else:
-            # A usul: Send a back button after files
             back_markup = types.InlineKeyboardMarkup()
-            back_markup.add(types.InlineKeyboardButton("🔙 Menyuga qaytish", callback_data="back_to_semester"))
+            if topic_id.startswith("oxta"):
+                back_markup.add(types.InlineKeyboardButton("🔙 Menyuga qaytish", callback_data="subject_oxta"))
+            else:
+                back_markup.add(types.InlineKeyboardButton("🔙 Menyuga qaytish", callback_data="back_to_semester"))
             bot.send_message(chat_id, "Boshqa mavzuni tanlash uchun menyuga qayting:", reply_markup=back_markup)
 
 # Channel post listener (runs in background for automatic mapping)
@@ -316,14 +383,22 @@ def source_material_handler(message):
         
     text = message.text or message.caption or ""
     
-    # Search for #farma_(\w+) hashtag (case insensitive)
-    match = re.search(r'#farma_(\w+)', text, re.IGNORECASE)
-    if match:
-        topic_key = match.group(1).lower()
+    # Search for hashtags: #farma_(\w+), #mavzu(\d+), #oxta_(\w+)
+    match_farma = re.search(r'#farma_(\w+)', text, re.IGNORECASE)
+    match_mavzu = re.search(r'#mavzu(\d+)', text, re.IGNORECASE)
+    match_oxta = re.search(r'#oxta_(\w+)', text, re.IGNORECASE)
+    
+    key = None
+    if match_farma:
+        key = match_farma.group(1).lower()
+    elif match_mavzu:
+        key = match_mavzu.group(1)
+    elif match_oxta:
+        key = f"oxta_{match_oxta.group(1).lower()}"
         
+    if key:
         with mapping_lock:
             mapping = load_mapping()
-            key = topic_key
             
             if key not in mapping:
                 mapping[key] = []
@@ -334,7 +409,7 @@ def source_material_handler(message):
             if msg_id not in mapping[key]:
                 mapping[key].append(msg_id)
                 save_mapping(mapping)
-                print(f"[SUCCESS] {msg_id}-xabar {topic_key}-mavzuga avtomatik bog'landi.")
+                print(f"[SUCCESS] {msg_id}-xabar {key}-kalitiga avtomatik bog'landi.")
 
 if __name__ == "__main__":
     print("Veb-server fon rejimida ishga tushirilmoqda...")
