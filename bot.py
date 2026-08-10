@@ -195,17 +195,23 @@ def send_topics_menu(chat_id, message_id, semester):
 
 # Send OXTA Menu
 def send_oxta_menu(chat_id, message_id):
-    text = "<b>OXTA (Topografik Anatomiya va Operativ Xirurgiya)</b>\n\nMavzuni tanlang:"
+    text = config.OXTA_TEXT
     markup = types.InlineKeyboardMarkup()
     
     # Adabiyotlar at the top
     btn_adabiyotlar = types.InlineKeyboardButton("📚 Adabiyotlar", callback_data="topic_oxta_adabiyotlar")
     markup.add(btn_adabiyotlar)
     
-    # Add OXTA topics (one per row due to long text)
-    for topic in config.OXTA_TOPICS:
-        btn = types.InlineKeyboardButton(topic["title"], callback_data=f"topic_oxta_mavzu{topic['id']}")
-        markup.add(btn)
+    # Add OXTA topics (1 to 15) in a 3x5 grid
+    row = []
+    for i in range(1, 16):
+        btn = types.InlineKeyboardButton(str(i), callback_data=f"topic_oxta_mavzu{i}")
+        row.append(btn)
+        if len(row) == 3:
+            markup.row(*row)
+            row = []
+    if row:
+        markup.row(*row)
         
     btn_back = types.InlineKeyboardButton("⬅️ Orqaga", callback_data="back_to_fundamental")
     markup.add(btn_back)

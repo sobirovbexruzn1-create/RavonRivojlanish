@@ -74,20 +74,20 @@ SEMESTER_2_MT = [
 ]
 
 # OXTA (Topografik Anatomiya va Operativ Xirurgiya) mavzulari
-OXTA_TOPICS = [
-    {"id": "1", "title": "1-mavzu: Kirish va jarrohlik asboblari"},
-    {"id": "2", "title": "2-mavzu: Qo'l topografik anatomiyasi"},
-    {"id": "3", "title": "3-mavzu: Oyoq topografik anatomiyasi"},
-    {"id": "4", "title": "4-mavzu: Qo'l va oyoq operativ xirurgiyasi"},
-    {"id": "5", "title": "5-mavzu: Amputatsiya va ekzartikulyatsiya"},
-    {"id": "6", "title": "6-mavzu: Bosh (miya qismi) xirurgiyasi"},
-    {"id": "7", "title": "7-mavzu: Bosh (yuz qismi) xirurgiyasi"},
-    {"id": "8", "title": "8-mavzu: Bo'yin sohasi xirurgiyasi"},
-    {"id": "9", "title": "9-mavzu: Ko'krak qafasi xirurgiyasi"},
-    {"id": "10", "title": "10-mavzu: Ko'krak bo'shlig'i a'zolari"},
-    {"id": "11", "title": "11-mavzu: Qorin sohasi xirurgiyasi"},
-    {"id": "12", "title": "12-mavzu: Qorin bo'shlig'i a'zolari"},
-    {"id": "13", "title": "13-mavzu: Ichaklar operativ xirurgiyasi"},
-    {"id": "14", "title": "14-mavzu: Bel va qorin parda orti sohasi"},
-    {"id": "15", "title": "15-mavzu: Tos sohasi anatomiyasi"},
-]
+OXTA_TEXT = """<b>OXTA (Topografik Anatomiya va Operativ Xirurgiya) mavzulari:</b>
+
+🔪 <b>1-mavzu:</b> Kirish va jarrohlik asboblari
+🔪 <b>2-mavzu:</b> Qo'l topografik anatomiyasi
+🔪 <b>3-mavzu:</b> Oyoq topografik anatomiyasi
+🔪 <b>4-mavzu:</b> Qo'l va oyoq operativ xirurgiyasi
+🔪 <b>5-mavzu:</b> Amputatsiya va ekzartikulyatsiya
+🔪 <b>6-mavzu:</b> Bosh (miya qismi) xirurgiyasi
+🔪 <b>7-mavzu:</b> Bosh (yuz qismi) xirurgiyasi
+🔪 <b>8-mavzu:</b> Bo'yin sohasi xirurgiyasi
+🔪 <b>9-mavzu:</b> Ko'krak qafasi xirurgiyasi
+🔪 <b>10-mavzu:</b> Ko'krak bo'shlig'i a'zolari
+🔪 <b>11-mavzu:</b> Qorin sohasi xirurgiyasi
+🔪 <b>12-mavzu:</b> Qorin bo'shlig'i a'zolari
+🔪 <b>13-mavzu:</b> Ichaklar operativ xirurgiyasi
+🔪 <b>14-mavzu:</b> Bel va qorin parda orti sohasi
+🔪 <b>15-mavzu:</b> Tos sohasi anatomiyasi"""
