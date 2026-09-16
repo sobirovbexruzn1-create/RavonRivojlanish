@@ -417,6 +417,23 @@ def source_material_handler(message):
                 save_mapping(mapping)
                 print(f"[SUCCESS] {msg_id}-xabar {key}-kalitiga avtomatik bog'landi.")
 
+# Guruhdagi kirdi-chiqdi xabarlarini o'chirish va chiqib ketganlarni bloklash
+@bot.message_handler(content_types=['new_chat_members', 'left_chat_member'])
+def handle_group_events(message):
+    # Kirdi-chiqdi xabarini o'chirish
+    try:
+        bot.delete_message(message.chat.id, message.message_id)
+    except Exception as e:
+        print(f"Guruh xabarini o'chirishda xatolik: {e}")
+        
+    # Chiqib ketgan foydalanuvchini bloklash (ban qilish)
+    if message.content_type == 'left_chat_member':
+        try:
+            bot.ban_chat_member(message.chat.id, message.left_chat_member.id)
+            print(f"Guruhdan chiqqan foydalanuvchi bloklandi: {message.left_chat_member.id}")
+        except Exception as e:
+            print(f"Foydalanuvchini bloklashda xatolik (Bot guruhda admin bo'lmasligi mumkin): {e}")
+
 if __name__ == "__main__":
     print("Veb-server fon rejimida ishga tushirilmoqda...")
     t = threading.Thread(target=run_web)
