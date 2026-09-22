@@ -232,17 +232,7 @@ def kb_semester(semester: int):
 
 def kb_oxta():
     markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("📖 Adabiyotlar", callback_data="topic_oxta_adabiyotlar"))
-
-    row = []
-    for i in range(1, 16):
-        row.append(types.InlineKeyboardButton(str(i), callback_data=f"topic_oxta_mavzu{i}"))
-        if len(row) == 3:
-            markup.row(*row)
-            row = []
-    if row:
-        markup.row(*row)
-
+    markup.add(types.InlineKeyboardButton("🤖 OXTA botiga o'tish ➡️", url="https://t.me/Tibbiyot_Schoolbot"))
     markup.add(types.InlineKeyboardButton("⬅️ Orqaga", callback_data="back_to_fundamental"))
     return markup
 
@@ -732,7 +722,14 @@ def callback_handler(call):
         safe_edit(chat_id, message_id, "💊 <b>Farmakologiya — bo'limni tanlang:</b>", kb_farmakologiya())
 
     elif data == "subject_oxta":
-        safe_edit(chat_id, message_id, config.OXTA_TEXT, kb_oxta())
+        text = (
+            "🔬 <b>OXTA (Topografik Anatomiya va Operativ Xirurgiya)</b>\n\n"
+            "Ushbu fan bo'yicha barcha video darslar, taqdimotlar (slaydlar), konspektlar va darsliklar "
+            "tizimli ravishda maxsus alohida botimizga joylangan.\n\n"
+            "Barcha materiallardan qulay va to'liq foydalanish uchun quyidagi tugma orqali "
+            "maxsus botimizga o'ting: 👇"
+        )
+        safe_edit(chat_id, message_id, text, kb_oxta())
 
     elif data == "semester_1":
         safe_edit(chat_id, message_id, config.SEMESTER_1_TEXT, kb_semester(1))
