@@ -4,90 +4,133 @@ from dotenv import load_dotenv
 # Load environmental variables
 load_dotenv()
 
+# ──────────────────────────────────────────
 # Bot Token from BotFather
+# ──────────────────────────────────────────
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 
-# The channels or groups that users MUST subscribe to (comma-separated list, e.g., @chan1,@chan2)
+# ──────────────────────────────────────────
+# Admin Telegram user IDs (comma-separated)
+# e.g. ADMIN_IDS=123456789,987654321
+# ──────────────────────────────────────────
+_admin_raw = os.getenv("ADMIN_IDS", "")
+ADMIN_IDS = [int(x.strip()) for x in _admin_raw.split(",") if x.strip().isdigit()]
+
+# ──────────────────────────────────────────
+# Required subscription channels
+# ──────────────────────────────────────────
 req_channels_raw = os.getenv("REQUIRED_CHANNELS", os.getenv("REQUIRED_CHANNEL", ""))
 REQUIRED_CHANNELS = [c.strip() for c in req_channels_raw.split(",") if c.strip()]
 
-# Corresponding invite links (comma-separated list, e.g., link1,link2)
 req_links_raw = os.getenv("REQUIRED_CHANNEL_LINKS", os.getenv("REQUIRED_CHANNEL_LINK", "https://t.me/your_channel"))
 REQUIRED_CHANNEL_LINKS = [l.strip() for l in req_links_raw.split(",") if l.strip()]
 
-# The private channel/group where materials are stored (e.g. -100xxxxxxxx)
+# ──────────────────────────────────────────
+# Source (materials) channel ID
+# ──────────────────────────────────────────
 SOURCES_CHANNEL_ID = int(os.getenv("SOURCES_CHANNEL_ID", "0"))
 
-# Path to the mapping database
+# ──────────────────────────────────────────
+# JSONBin.io persistent storage
+# ──────────────────────────────────────────
+JSONBIN_API_KEY = os.getenv("JSONBIN_API_KEY", "")
+JSONBIN_BIN_ID = os.getenv("JSONBIN_BIN_ID", "")
+
+# ──────────────────────────────────────────
+# Local fallback mapping file
+# ──────────────────────────────────────────
 MAPPING_FILE = os.path.join(os.path.dirname(__file__), "mapping.json")
 
-# Define topics for semesters
-SEMESTER_1_TEXT = """<b>1-semestr mavzulari:</b>
+# ══════════════════════════════════════════
+# FARMAKOLOGIYA — 1-semestr
+# ══════════════════════════════════════════
+SEMESTER_1_TEXT = """<b>💊 Farmakologiya — 1-semestr mavzulari:</b>
 
-💊 <b>1-mavzu:</b> Retsepturaning Oila shifokori tayyorlashdagi ahamiyati. Retsept va uning tuzilishi. Qattiq va yumshoq dori shakllari va ularga retsept yozish qoidalari.
+<b>1-mavzu:</b> Retsepturaning ahamiyati. Retsept tuzilishi. Qattiq va yumshoq dori shakllari.
 
-💊 <b>2-mavzu:</b> Enteral qo‘llaniluvchi suyuq dori shakllari va ularga retsept yozish qoidalari. Parenteral va sirtga qo‘llaniluvchi suyuq dori shakllari va ularga retsept yozish qoidalari.
+<b>2-mavzu:</b> Enteral va parenteral suyuq dori shakllari va ularga retsept yozish.
 
-💊 <b>3-mavzu:</b> Umumiy farmakologiya. Dori moddalarning farmakokinetikasi va farmakodinamikasi. Afferent nerv tizimiga ta’sir etuvchi vositalar.
+<b>3-mavzu:</b> Umumiy farmakologiya. Farmakokinetika va farmakodinamika. Afferent nerv tizimi.
 
-💊 <b>4-mavzu:</b> M va M-N-xolinoretseptorlarga ta’sir etuvchi vositalar.
+<b>4-mavzu:</b> M va M-N-xolinoretseptorlarga ta'sir etuvchi vositalar.
 
-💊 <b>5-mavzu:</b> N-xolinoretseptorlarga ta’sir etuvchi vositalar.
+<b>5-mavzu:</b> N-xolinoretseptorlarga ta'sir etuvchi vositalar.
 
-💊 <b>6-mavzu:</b> Adrenoretseptorlarga ta’sir etuvchi vositalar.
+<b>6-mavzu:</b> Adrenoretseptorlarga ta'sir etuvchi vositalar.
 
-💊 <b>7-mavzu:</b> Uyqu chaqiruvchi vositalar. Neyroleptiklar. Anksiolitiklar.
+<b>7-mavzu:</b> Uyqu chaqiruvchi vositalar. Neyroleptiklar. Anksiolitiklar.
 
-💊 <b>8-mavzu:</b> Psixostimulyatorlar. Depressiyaga qarshi vositalar.
+<b>8-mavzu:</b> Psixostimulyatorlar. Depressiyaga qarshi vositalar.
 
-💊 <b>9-mavzu:</b> Nafas a’zolari faoliyatiga ta’sir etuvchi vositalar."""
+<b>9-mavzu:</b> Nafas a'zolari faoliyatiga ta'sir etuvchi vositalar."""
 
 SEMESTER_1_MT = [
-    {"id": "s1_mt1", "title": "Analgetiklar"}
+    {"id": "s1_mt1", "title": "📝 MT: Analgetiklar"}
 ]
 
-SEMESTER_2_TEXT = """<b>2-semestr mavzulari:</b>
+# ══════════════════════════════════════════
+# FARMAKOLOGIYA — 2-semestr
+# ══════════════════════════════════════════
+SEMESTER_2_TEXT = """<b>💊 Farmakologiya — 2-semestr mavzulari:</b>
 
-💊 <b>1-mavzu:</b> Antianginal vositalar. Antiaritmik vositalar.
+<b>1-mavzu:</b> Antianginal vositalar. Antiaritmik vositalar.
 
-💊 <b>2-mavzu:</b> Gipotenziv vositalar. Gipertenziv vositalar.
+<b>2-mavzu:</b> Gipotenziv vositalar. Gipertenziv vositalar.
 
-💊 <b>3-mavzu:</b> Hazm a’zolari tizimiga ta’sir etuvchi vositalar.
+<b>3-mavzu:</b> Hazm a'zolari tizimiga ta'sir etuvchi vositalar.
 
-💊 <b>4-mavzu:</b> Diuretik vositalar.
+<b>4-mavzu:</b> Diuretik vositalar.
 
-💊 <b>5-mavzu:</b> Qon tizimiga ta’sir etuvchi vositalar. Antiagregant. Antikogulyant. Fibrinolitik vositalar.
+<b>5-mavzu:</b> Qon tizimiga ta'sir etuvchi vositalar. Antiagregant. Antikoagulyant. Fibrinolitik.
 
-💊 <b>6-mavzu:</b> Oqsil va polipeptid tuzilishga ega bo‘lgan gormonal preparatlar. Yallig‘lanishga qarshi vositalar.
+<b>6-mavzu:</b> Gormonal preparatlar. Yallig'lanishga qarshi vositalar.
 
-💊 <b>7-mavzu:</b> Antiseptik va dezinfeksiyalovchi vositalar. Sintetik antibakterial vositalar.
+<b>7-mavzu:</b> Antiseptik va dezinfeksiyalovchi vositalar. Sintetik antibakterial vositalar.
 
-💊 <b>8-mavzu:</b> Antibiotiklar.
+<b>8-mavzu:</b> Antibiotiklar.
 
-💊 <b>9-mavzu:</b> Silga qarshi vositalar. Zamburug‘larga qarshi vositalar."""
+<b>9-mavzu:</b> Silga qarshi vositalar. Zamburug'larga qarshi vositalar."""
 
 SEMESTER_2_MT = [
-    {"id": "s2_mt1", "title": "Antiateroskleroz dorilar"},
-    {"id": "s2_mt2", "title": "Vitaminlar"},
-    {"id": "s2_mt3", "title": "O'smalarga qarshi vositalar"},
-    {"id": "s2_mt4", "title": "Gijjalarga qarshi vositalar"}
+    {"id": "s2_mt1", "title": "📝 MT: Antiateroskleroz dorilar"},
+    {"id": "s2_mt2", "title": "📝 MT: Vitaminlar"},
+    {"id": "s2_mt3", "title": "📝 MT: O'smalarga qarshi vositalar"},
+    {"id": "s2_mt4", "title": "📝 MT: Gijjalarga qarshi vositalar"}
 ]
 
-# OXTA (Topografik Anatomiya va Operativ Xirurgiya) mavzulari
-OXTA_TEXT = """<b>OXTA (Topografik Anatomiya va Operativ Xirurgiya) mavzulari:</b>
+# ══════════════════════════════════════════
+# OXTA mavzulari
+# ══════════════════════════════════════════
+OXTA_TEXT = """<b>🔬 OXTA — Topografik Anatomiya va Operativ Xirurgiya:</b>
 
-🔪 <b>1-mavzu:</b> Kirish va jarrohlik asboblari
-🔪 <b>2-mavzu:</b> Qo'l topografik anatomiyasi
-🔪 <b>3-mavzu:</b> Oyoq topografik anatomiyasi
-🔪 <b>4-mavzu:</b> Qo'l va oyoq operativ xirurgiyasi
-🔪 <b>5-mavzu:</b> Amputatsiya va ekzartikulyatsiya
-🔪 <b>6-mavzu:</b> Bosh (miya qismi) xirurgiyasi
-🔪 <b>7-mavzu:</b> Bosh (yuz qismi) xirurgiyasi
-🔪 <b>8-mavzu:</b> Bo'yin sohasi xirurgiyasi
-🔪 <b>9-mavzu:</b> Ko'krak qafasi xirurgiyasi
-🔪 <b>10-mavzu:</b> Ko'krak bo'shlig'i a'zolari
-🔪 <b>11-mavzu:</b> Qorin sohasi xirurgiyasi
-🔪 <b>12-mavzu:</b> Qorin bo'shlig'i a'zolari
-🔪 <b>13-mavzu:</b> Ichaklar operativ xirurgiyasi
-🔪 <b>14-mavzu:</b> Bel va qorin parda orti sohasi
-🔪 <b>15-mavzu:</b> Tos sohasi anatomiyasi"""
+<b>1-mavzu:</b> Kirish va jarrohlik asboblari
+<b>2-mavzu:</b> Qo'l topografik anatomiyasi
+<b>3-mavzu:</b> Oyoq topografik anatomiyasi
+<b>4-mavzu:</b> Qo'l va oyoq operativ xirurgiyasi
+<b>5-mavzu:</b> Amputatsiya va ekzartikulyatsiya
+<b>6-mavzu:</b> Bosh (miya qismi) xirurgiyasi
+<b>7-mavzu:</b> Bosh (yuz qismi) xirurgiyasi
+<b>8-mavzu:</b> Bo'yin sohasi xirurgiyasi
+<b>9-mavzu:</b> Ko'krak qafasi xirurgiyasi
+<b>10-mavzu:</b> Ko'krak bo'shlig'i a'zolari
+<b>11-mavzu:</b> Qorin sohasi xirurgiyasi
+<b>12-mavzu:</b> Qorin bo'shlig'i a'zolari
+<b>13-mavzu:</b> Ichaklar operativ xirurgiyasi
+<b>14-mavzu:</b> Bel va qorin parda orti sohasi
+<b>15-mavzu:</b> Tos sohasi anatomiyasi"""
+
+# ══════════════════════════════════════════
+# Admin panel: valid topic keys
+# ══════════════════════════════════════════
+# Maps short admin commands to internal keys
+# Usage: /add <alias> <number>  OR  /add <alias> mt<number>  OR  /add <alias> ad
+TOPIC_ALIASES = {
+    # Farmakologiya 1-semestr
+    "farma": {"prefix": "s1", "max": 9, "mt_ids": ["s1_mt1"], "ad_key": "ad"},
+    "f1":    {"prefix": "s1", "max": 9, "mt_ids": ["s1_mt1"], "ad_key": "ad"},
+    # Farmakologiya 2-semestr
+    "farma2": {"prefix": "s2", "max": 9, "mt_ids": ["s2_mt1", "s2_mt2", "s2_mt3", "s2_mt4"], "ad_key": "ad"},
+    "f2":     {"prefix": "s2", "max": 9, "mt_ids": ["s2_mt1", "s2_mt2", "s2_mt3", "s2_mt4"], "ad_key": "ad"},
+    # OXTA
+    "oxta": {"prefix": "oxta_mavzu", "max": 15, "mt_ids": [], "ad_key": "oxta_adabiyotlar"},
+}
