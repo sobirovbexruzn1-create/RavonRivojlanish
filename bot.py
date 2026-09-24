@@ -710,13 +710,16 @@ def callback_handler(call):
         safe_edit(chat_id, message_id, "📂 <b>Fanni tanlang:</b>", kb_fundamental())
 
     elif data == "category_klinik":
-        safe_edit(
-            chat_id, message_id,
-            "🩺 <b>Klinik fanlar</b>\n\nBu bo'lim tez kunda qo'shiladi. Kuzatib boring!",
-            types.InlineKeyboardMarkup().add(
-                types.InlineKeyboardButton("⬅️ Orqaga", callback_data="back_to_category")
-            )
+        markup = types.InlineKeyboardMarkup()
+        markup.add(types.InlineKeyboardButton("🩺 Klinik fanlar botiga o'tish ➡️", url="https://t.me/klinikfanbot"))
+        markup.add(types.InlineKeyboardButton("⬅️ Orqaga", callback_data="back_to_category"))
+        text = (
+            "🩺 <b>Klinik fanlar (4–6 kurslar)</b>\n\n"
+            "Ushbu yo'nalish bo'yicha barcha klinik protokollar, qo'llanmalar, "
+            "kasalliklar tarixi va darsliklar maxsus alohida botimizga joylanmoqda.\n\n"
+            "Klinik fanlar botiga o'tish uchun quyidagi tugmani bosing: 👇"
         )
+        safe_edit(chat_id, message_id, text, markup)
 
     elif data in ("back_to_subject", "subject_farmakologiya"):
         safe_edit(chat_id, message_id, "💊 <b>Farmakologiya — bo'limni tanlang:</b>", kb_farmakologiya())
