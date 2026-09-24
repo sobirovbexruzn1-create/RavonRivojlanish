@@ -112,16 +112,43 @@ def _save_local(mapping):
         print(f"[STORAGE] Mahalliy fayl saqlash xatoligi: {e}")
 
 
-def add_message(key: str, msg_id: int) -> bool:
-    """Add a message_id to a topic key. Returns True if added (not duplicate)."""
+def set_caption(msg_id: int, caption: str):
+    """Save cleaned caption for a message_id."""
+    mapping = load_mapping()
+    if "_captions" not in mapping:
+        mapping["_captions"] = {}
+    mapping["_captions"][str(msg_id)] = caption
+    save_mapping(mapping)
+
+
+def get_caption(msg_id: int):
+    """Retrieve cleaned caption for a message_id if available."""
+    mapping = load_mapping()
+    captions = mapping.get("_captions", {})
+    return captions.get(str(msg_id))
+
+
+def add_message(key: str, msg_id: int, caption: str = None) -> bool:
+    """Add a message_id to a topic key with optional clean caption. Returns True if added/updated."""
     mapping = load_mapping()
     if key not in mapping:
         mapping[key] = []
+
+    changed = False
     if msg_id not in mapping[key]:
         mapping[key].append(msg_id)
+        changed = True
+
+    if caption is not None:
+        if "_captions" not in mapping:
+            mapping["_captions"] = {}
+        mapping["_captions"][str(msg_id)] = caption
+        changed = True
+
+    if changed:
         save_mapping(mapping)
         return True
-    return False  # Already exists
+    return False
 
 
 def remove_message(key: str, msg_id: int) -> bool:
@@ -131,6 +158,8 @@ def remove_message(key: str, msg_id: int) -> bool:
         mapping[key].remove(msg_id)
         if not mapping[key]:
             del mapping[key]
+        if "_captions" in mapping and str(msg_id) in mapping["_captions"]:
+            del mapping["_captions"][str(msg_id)]
         save_mapping(mapping)
         return True
     return False
@@ -140,7 +169,11 @@ def clear_topic(key: str) -> bool:
     """Remove all messages for a topic key."""
     mapping = load_mapping()
     if key in mapping:
+        msg_ids = mapping[key]
         del mapping[key]
+        if "_captions" in mapping:
+            for mid in msg_ids:
+                mapping["_captions"].pop(str(mid), None)
         save_mapping(mapping)
         return True
     return False
@@ -155,4 +188,4 @@ def get_messages(key: str) -> list:
 def list_topics() -> list:
     """Return all topic keys that have at least one message."""
     mapping = load_mapping()
-    return [(k, len(v)) for k, v in mapping.items() if v]
+    return [(k, len(v)) for k, v in mapping.items() if v and not k.startswith("_")]

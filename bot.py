@@ -89,6 +89,19 @@ def is_subscribed(user_id: int) -> bool:
     # return True
 
 
+def strip_hashtags(text: str) -> str:
+    """Remove hashtags and clean extra whitespace from message caption/text."""
+    if not text:
+        return ""
+    # Remove #farma_s1_1, #mavzu1, #oxta_mavzu1, #tibbiyot, etc.
+    cleaned = re.sub(r'#[\w_]+', '', text)
+    # Collapse multiple inline spaces to one
+    cleaned = re.sub(r'[ \t]+', ' ', cleaned)
+    # Collapse multiple empty lines
+    cleaned = re.sub(r'\n\s*\n+', '\n\n', cleaned)
+    return cleaned.strip()
+
+
 def safe_edit(chat_id, message_id, text, reply_markup=None, parse_mode='HTML'):
     """Edit a message. Falls back to sending a new one on error."""
     try:
@@ -133,11 +146,17 @@ def send_materials(chat_id, call_id, topic_key):
     success = 0
     for msg_id in message_ids:
         try:
+            caption = storage.get_caption(msg_id)
+            copy_kwargs = {}
+            if caption is not None:
+                copy_kwargs["caption"] = caption
+                copy_kwargs["parse_mode"] = "HTML"
+
             bot.copy_message(
                 chat_id=chat_id,
                 from_chat_id=config.SOURCES_CHANNEL_ID,
-                message_id=msg_id
-                # protect_content=True  ← vaqtincha o'chirilgan
+                message_id=msg_id,
+                **copy_kwargs
             )
             success += 1
             time.sleep(0.05)  # Avoid flood
@@ -145,7 +164,7 @@ def send_materials(chat_id, call_id, topic_key):
             if "429" in str(e):
                 time.sleep(2)
                 try:
-                    bot.copy_message(chat_id, config.SOURCES_CHANNEL_ID, msg_id)
+                    bot.copy_message(chat_id, config.SOURCES_CHANNEL_ID, msg_id, **copy_kwargs)
                     success += 1
                 except Exception:
                     pass
@@ -245,10 +264,8 @@ def send_welcome(message):
     first_name = message.from_user.first_name or "Foydalanuvchi"
     welcome_text = (
         f"👋 Assalomu alaykum, <b>{first_name}</b>!\n\n"
-        f"🎓 <b>Ravon Rivojlanish</b> ta'lim botiga xush kelibsiz!\n\n"
-        f"Bu bot tibbiyot talabalari uchun Farmakologiya va OXTA fanlaridan "
-        f"o'quv materiallarini taqdim etadi.\n\n"
-        f"Pastdagi tugmalardan birini tanlang 👇"
+        f"Ravon Rivojlanish botiga xush kelibsiz!\n\n"
+        f"Bo'limni tanlang👇"
     )
     reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     reply_markup.add(types.KeyboardButton("🏠 Asosiy menyu"))
@@ -325,10 +342,17 @@ def _handle_deeplink(message, topic_key: str):
     success = 0
     for msg_id in message_ids:
         try:
+            caption = storage.get_caption(msg_id)
+            copy_kwargs = {}
+            if caption is not None:
+                copy_kwargs["caption"] = caption
+                copy_kwargs["parse_mode"] = "HTML"
+
             bot.copy_message(
                 chat_id=chat_id,
                 from_chat_id=config.SOURCES_CHANNEL_ID,
-                message_id=msg_id
+                message_id=msg_id,
+                **copy_kwargs
             )
             success += 1
             time.sleep(0.05)
@@ -336,7 +360,7 @@ def _handle_deeplink(message, topic_key: str):
             if "429" in str(e):
                 time.sleep(2)
                 try:
-                    bot.copy_message(chat_id, config.SOURCES_CHANNEL_ID, msg_id)
+                    bot.copy_message(chat_id, config.SOURCES_CHANNEL_ID, msg_id, **copy_kwargs)
                     success += 1
                 except Exception:
                     pass
@@ -552,12 +576,14 @@ def admin_add(message):
         return
 
     msg_id = message.reply_to_message.message_id
+    raw_text = message.reply_to_message.caption or message.reply_to_message.text or ""
+    cleaned_caption = strip_hashtags(raw_text)
 
     with mapping_lock:
-        added = storage.add_message(key, msg_id)
+        added = storage.add_message(key, msg_id, caption=cleaned_caption if cleaned_caption else None)
 
     if added:
-        bot.reply_to(message, f"✅ Xabar <b>#{msg_id}</b> → <code>{key}</code> ga saqlandi.", parse_mode='HTML')
+        bot.reply_to(message, f"✅ Xabar <b>#{msg_id}</b> → <code>{key}</code> ga saqlandi (heshteglar tozalandi).", parse_mode='HTML')
     else:
         bot.reply_to(message, f"ℹ️ Xabar <b>#{msg_id}</b> allaqachon <code>{key}</code> da mavjud.", parse_mode='HTML')
 
@@ -784,10 +810,11 @@ def source_material_handler(message):
         key = f"oxta_{m_oxta.group(1).lower()}"
 
     if key:
+        cleaned_caption = strip_hashtags(text)
         with mapping_lock:
-            added = storage.add_message(key, message.message_id)
+            added = storage.add_message(key, message.message_id, caption=cleaned_caption if cleaned_caption else None)
         if added:
-            log.info(f"[HASHTAG] Xabar {message.message_id} → '{key}' ga saqlandi.")
+            log.info(f"[HASHTAG] Xabar {message.message_id} → '{key}' ga saqlandi (heshteglar tozalandi).")
 
 
 # ══════════════════════════════════════════
