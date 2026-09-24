@@ -53,6 +53,10 @@ telebot.apihelper.SESSION_TIME_TO_LIVE = 5 * 60
 
 mapping_lock = threading.Lock()
 
+# Admin interactive state machine for /post command
+# { user_id: { "step": "...", "fan": "...", "mavzu": "...", "key": "...", "photo_id": None, "text": "", "btn_text": "" } }
+admin_states = {}
+
 
 # ══════════════════════════════════════════
 # HELPERS
@@ -429,11 +433,313 @@ def admin_panel(message):
         "<code>/list</code> — Barcha saqlangan mavzular\n"
         "<code>/remove f1 3 &lt;msg_id&gt;</code> — Bitta xabarni o'chirish\n"
         "<code>/clear oxta 7</code> — Mavzuni to'liq tozalash\n\n"
-        "<b>Kanal uchun tugma yaratish:</b>\n"
-        "<code>/deeplink f1 3</code> — Farma 1-sem, 3-mavzu tugmasi\n"
-        "<code>/deeplink oxta 7</code> — OXTA 7-mavzu tugmasi"
+        "<b>Kanal uchun post yaratish:</b>\n"
+        "<code>/post</code> — Interaktiv post yaratuvchi\n"
+        "<code>/deeplink f1 3</code> — Tez havola yaratish\n"
+        "<code>/cancel</code> — Jarayonni bekor qilish"
     )
     bot.send_message(message.chat.id, text, parse_mode='HTML')
+
+
+# ──────────────────────────────────────────
+# /cancel — Bekor qilish
+# ──────────────────────────────────────────
+@bot.message_handler(commands=['cancel'])
+def cancel_handler(message):
+    uid = message.from_user.id
+    if uid in admin_states:
+        del admin_states[uid]
+        bot.reply_to(message, "❌ Jarayon bekor qilindi.")
+    else:
+        bot.reply_to(message, "ℹ️ Hozirda faol jarayon yo'q.")
+
+
+# ──────────────────────────────────────────
+# /post — Interaktiv post yaratuvchi
+# ──────────────────────────────────────────
+@bot.message_handler(commands=['post'])
+def post_builder_start(message):
+    """Start interactive post builder for channel."""
+    if not is_admin(message.from_user.id):
+        return
+
+    uid = message.from_user.id
+    admin_states[uid] = {"step": "choose_fan"}
+
+    markup = types.InlineKeyboardMarkup()
+    markup.row(
+        types.InlineKeyboardButton("💊 Farma 1-sem", callback_data="post_fan_f1"),
+        types.InlineKeyboardButton("💊 Farma 2-sem", callback_data="post_fan_f2"),
+    )
+    markup.add(types.InlineKeyboardButton("🔬 OXTA", callback_data="post_fan_oxta"))
+    markup.add(types.InlineKeyboardButton("❌ Bekor qilish", callback_data="post_cancel"))
+
+    bot.send_message(
+        message.chat.id,
+        "📝 <b>Post yaratuvchi</b>\n\n"
+        "1-qadam: Fanni tanlang 👇",
+        reply_markup=markup,
+        parse_mode='HTML'
+    )
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("post_fan_"))
+def post_fan_selected(call):
+    uid = call.from_user.id
+    if not is_admin(uid) or uid not in admin_states:
+        return
+    try:
+        bot.answer_callback_query(call.id)
+    except Exception:
+        pass
+
+    fan = call.data.replace("post_fan_", "")
+    alias = config.TOPIC_ALIASES.get(fan)
+    if not alias:
+        bot.edit_message_text("❌ Xatolik.", call.message.chat.id, call.message.message_id)
+        admin_states.pop(uid, None)
+        return
+
+    admin_states[uid]["fan"] = fan
+    admin_states[uid]["alias"] = alias
+    admin_states[uid]["step"] = "choose_mavzu"
+
+    fan_names = {"f1": "Farmakologiya 1-semestr", "f2": "Farmakologiya 2-semestr", "oxta": "OXTA"}
+    fan_label = fan_names.get(fan, fan)
+
+    markup = types.InlineKeyboardMarkup()
+    row = []
+    for i in range(1, alias["max"] + 1):
+        row.append(types.InlineKeyboardButton(str(i), callback_data=f"post_mavzu_{i}"))
+        if len(row) == 3:
+            markup.row(*row)
+            row = []
+    if row:
+        markup.row(*row)
+
+    # Add MT topics if any
+    for idx, mt_id in enumerate(alias.get("mt_ids", []), 1):
+        markup.add(types.InlineKeyboardButton(f"📝 MT{idx}", callback_data=f"post_mavzu_mt{idx}"))
+
+    # Add Adabiyotlar
+    markup.add(types.InlineKeyboardButton("📖 Adabiyotlar", callback_data="post_mavzu_ad"))
+    markup.add(types.InlineKeyboardButton("❌ Bekor qilish", callback_data="post_cancel"))
+
+    safe_edit(
+        call.message.chat.id, call.message.message_id,
+        f"📝 <b>Post yaratuvchi</b> — {fan_label}\n\n"
+        f"2-qadam: Mavzuni tanlang 👇",
+        markup
+    )
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("post_mavzu_"))
+def post_mavzu_selected(call):
+    uid = call.from_user.id
+    if not is_admin(uid) or uid not in admin_states:
+        return
+    try:
+        bot.answer_callback_query(call.id)
+    except Exception:
+        pass
+
+    state = admin_states[uid]
+    alias = state.get("alias")
+    mavzu_raw = call.data.replace("post_mavzu_", "")
+
+    # Determine internal key and label
+    if mavzu_raw == "ad":
+        key = alias["ad_key"]
+        label = "Adabiyotlar"
+    elif mavzu_raw.startswith("mt"):
+        mt_num = mavzu_raw[2:]
+        mt_ids = alias.get("mt_ids", [])
+        if mt_num.isdigit() and 0 < int(mt_num) <= len(mt_ids):
+            key = mt_ids[int(mt_num) - 1]
+            label = f"MT {mt_num}"
+        else:
+            bot.edit_message_text("❌ Xatolik.", call.message.chat.id, call.message.message_id)
+            admin_states.pop(uid, None)
+            return
+    elif mavzu_raw.isdigit():
+        num = int(mavzu_raw)
+        key = f"{alias['prefix']}_{num}"
+        label = f"{num}-mavzu"
+    else:
+        bot.edit_message_text("❌ Xatolik.", call.message.chat.id, call.message.message_id)
+        admin_states.pop(uid, None)
+        return
+
+    state["mavzu"] = mavzu_raw
+    state["key"] = key
+    state["label"] = label
+    state["step"] = "ask_photo"
+
+    markup = types.InlineKeyboardMarkup()
+    markup.row(
+        types.InlineKeyboardButton("📷 Ha, rasm qo'shaman", callback_data="post_photo_yes"),
+        types.InlineKeyboardButton("✏️ Yo'q, matnsiz", callback_data="post_photo_skip"),
+    )
+    markup.add(types.InlineKeyboardButton("❌ Bekor qilish", callback_data="post_cancel"))
+
+    fan_names = {"f1": "Farmakologiya 1-sem", "f2": "Farmakologiya 2-sem", "oxta": "OXTA"}
+    fan_label = fan_names.get(state["fan"], state["fan"])
+
+    safe_edit(
+        call.message.chat.id, call.message.message_id,
+        f"📝 <b>Post yaratuvchi</b> — {fan_label}, {label}\n\n"
+        f"3-qadam: Post uchun rasm qo'shasizmi? 👇",
+        markup
+    )
+
+
+@bot.callback_query_handler(func=lambda call: call.data == "post_photo_yes")
+def post_photo_yes(call):
+    uid = call.from_user.id
+    if not is_admin(uid) or uid not in admin_states:
+        return
+    try:
+        bot.answer_callback_query(call.id)
+    except Exception:
+        pass
+
+    admin_states[uid]["step"] = "waiting_photo"
+    safe_edit(
+        call.message.chat.id, call.message.message_id,
+        "📷 <b>Rasmni yuboring...</b>\n\n"
+        "<i>Bekor qilish uchun /cancel yozing.</i>",
+        None
+    )
+
+
+@bot.callback_query_handler(func=lambda call: call.data == "post_photo_skip")
+def post_photo_skip(call):
+    uid = call.from_user.id
+    if not is_admin(uid) or uid not in admin_states:
+        return
+    try:
+        bot.answer_callback_query(call.id)
+    except Exception:
+        pass
+
+    admin_states[uid]["photo_id"] = None
+    admin_states[uid]["step"] = "waiting_text"
+    safe_edit(
+        call.message.chat.id, call.message.message_id,
+        "✏️ <b>Post matnini yozing:</b>\n\n"
+        "Masalan:\n<i>💊 Farmakologiya | 1-semestr\n📌 3-mavzu: Umumiy farmakologiya...</i>\n\n"
+        "<i>Bekor qilish uchun /cancel yozing.</i>",
+        None
+    )
+
+
+@bot.callback_query_handler(func=lambda call: call.data == "post_cancel")
+def post_cancel(call):
+    uid = call.from_user.id
+    admin_states.pop(uid, None)
+    try:
+        bot.answer_callback_query(call.id, "❌ Bekor qilindi")
+    except Exception:
+        pass
+    safe_edit(
+        call.message.chat.id, call.message.message_id,
+        "❌ Post yaratish bekor qilindi.",
+        None
+    )
+
+
+# ──────────────────────────────────────────
+# Admin state machine — message steps
+# ──────────────────────────────────────────
+@bot.message_handler(content_types=['photo'], func=lambda m: m.from_user.id in admin_states and admin_states.get(m.from_user.id, {}).get("step") == "waiting_photo")
+def post_receive_photo(message):
+    uid = message.from_user.id
+    state = admin_states[uid]
+
+    # Get largest photo
+    photo_id = message.photo[-1].file_id
+    state["photo_id"] = photo_id
+    state["step"] = "waiting_text"
+
+    bot.send_message(
+        message.chat.id,
+        "✅ Rasm qabul qilindi!\n\n"
+        "✏️ <b>Endi post matnini yozing:</b>\n\n"
+        "Masalan:\n<i>💊 Farmakologiya | 1-semestr\n📌 3-mavzu: Umumiy farmakologiya...</i>\n\n"
+        "<i>Bekor qilish uchun /cancel yozing.</i>",
+        parse_mode='HTML'
+    )
+
+
+@bot.message_handler(func=lambda m: m.from_user.id in admin_states and admin_states.get(m.from_user.id, {}).get("step") == "waiting_text" and m.content_type == "text" and not m.text.startswith("/"))
+def post_receive_text(message):
+    uid = message.from_user.id
+    state = admin_states[uid]
+
+    state["text"] = message.text
+    state["step"] = "waiting_btn_text"
+
+    bot.send_message(
+        message.chat.id,
+        "✅ Matn qabul qilindi!\n\n"
+        "🔘 <b>Tugmada nima yozilsin?</b>\n\n"
+        "Masalan: <i>📥 Mavzuni olish</i>, <i>Yuklab olish</i>, <i>Ko'rish</i>\n\n"
+        "<i>Bekor qilish uchun /cancel yozing.</i>",
+        parse_mode='HTML'
+    )
+
+
+@bot.message_handler(func=lambda m: m.from_user.id in admin_states and admin_states.get(m.from_user.id, {}).get("step") == "waiting_btn_text" and m.content_type == "text" and not m.text.startswith("/"))
+def post_receive_btn_text(message):
+    uid = message.from_user.id
+    state = admin_states[uid]
+
+    btn_text = message.text.strip()
+    key = state["key"]
+
+    # Get bot username
+    try:
+        me = bot.get_me()
+        bot_username = me.username
+    except Exception:
+        bot_username = "RavonRivojlanishbot"
+
+    deep_link = f"https://t.me/{bot_username}?start={key}"
+
+    # Build the post
+    markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton(btn_text, url=deep_link))
+
+    fan_names = {"f1": "Farma 1-sem", "f2": "Farma 2-sem", "oxta": "OXTA"}
+    fan_label = fan_names.get(state["fan"], state["fan"])
+    label = state.get("label", "")
+
+    bot.send_message(
+        message.chat.id,
+        f"✅ <b>Post tayyor!</b> — {fan_label}, {label}\n\n"
+        f"Quyidagi postni kanalga <b>forward</b> qiling: 👇",
+        parse_mode='HTML'
+    )
+
+    # Send the actual post (photo or text-only)
+    if state.get("photo_id"):
+        bot.send_photo(
+            message.chat.id,
+            state["photo_id"],
+            caption=state["text"],
+            reply_markup=markup,
+            parse_mode='HTML'
+        )
+    else:
+        bot.send_message(
+            message.chat.id,
+            state["text"],
+            reply_markup=markup,
+            parse_mode='HTML'
+        )
+
+    # Clean up state
+    del admin_states[uid]
 
 
 @bot.message_handler(commands=['deeplink'])
