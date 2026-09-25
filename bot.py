@@ -97,7 +97,7 @@ def strip_hashtags(text: str) -> str:
     """Remove hashtags and clean extra whitespace from message caption/text."""
     if not text:
         return ""
-    # Remove #farma_s1_1, #mavzu1, #oxta_mavzu1, #tibbiyot, etc.
+    # Remove #farma_s1_1, #mavzu1, #tibbiyot, etc.
     cleaned = re.sub(r'#[\w_]+', '', text)
     # Collapse multiple inline spaces to one
     cleaned = re.sub(r'[ \t]+', ' ', cleaned)
@@ -178,10 +178,8 @@ def send_materials(chat_id, call_id, topic_key):
     if success == 0:
         bot.send_message(chat_id, "❌ Manbalarni yuborishda xatolik. Iltimos, keyinroq urunib ko'ring.")
     else:
-        is_oxta = topic_key.startswith("oxta")
-        back_key = "subject_oxta" if is_oxta else "back_to_semester"
         back_markup = types.InlineKeyboardMarkup()
-        back_markup.add(types.InlineKeyboardButton("🔙 Menyuga qaytish", callback_data=back_key))
+        back_markup.add(types.InlineKeyboardButton("🔙 Menyuga qaytish", callback_data="back_to_semester"))
         bot.send_message(
             chat_id,
             f"✅ <b>{success} ta</b> manba yuborildi. Boshqa mavzuni tanlash uchun:",
@@ -215,7 +213,7 @@ def kb_category():
 def kb_fundamental():
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("💊 Farmakologiya", callback_data="subject_farmakologiya"))
-    markup.add(types.InlineKeyboardButton("🔬 OXTA", callback_data="subject_oxta"))
+    markup.add(types.InlineKeyboardButton("🔬 OXTA → @Tibbiyot_Schoolbot", url="https://t.me/Tibbiyot_Schoolbot"))
     markup.add(types.InlineKeyboardButton("⬅️ Orqaga", callback_data="back_to_category"))
     return markup
 
@@ -227,7 +225,7 @@ def kb_farmakologiya():
         types.InlineKeyboardButton("📘 1-semestr", callback_data="semester_1"),
         types.InlineKeyboardButton("📕 2-semestr", callback_data="semester_2")
     )
-    markup.add(types.InlineKeyboardButton("⬅️ Orqaga", callback_data="back_to_subject"))
+    markup.add(types.InlineKeyboardButton("⬅️ Orqaga", callback_data="category_fundamental"))
     return markup
 
 
@@ -252,12 +250,6 @@ def kb_semester(semester: int):
     markup.add(types.InlineKeyboardButton("⬅️ Orqaga", callback_data="back_to_subject"))
     return markup
 
-
-def kb_oxta():
-    markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("🤖 OXTA botiga o'tish ➡️", url="https://t.me/Tibbiyot_Schoolbot"))
-    markup.add(types.InlineKeyboardButton("⬅️ Orqaga", callback_data="back_to_fundamental"))
-    return markup
 
 
 # ══════════════════════════════════════════
@@ -374,12 +366,10 @@ def _handle_deeplink(message, topic_key: str):
     if success == 0:
         bot.send_message(chat_id, "❌ Manbalarni yuborishda xatolik yuz berdi. Qayta /start bosing.")
     else:
-        is_oxta = topic_key.startswith("oxta")
-        back_key = "subject_oxta" if is_oxta else "back_to_semester"
         back_markup = types.InlineKeyboardMarkup()
         back_markup.row(
             types.InlineKeyboardButton("🏠 Asosiy menyu", callback_data="back_to_category"),
-            types.InlineKeyboardButton("🔙 Boshqa mavzular", callback_data=back_key)
+            types.InlineKeyboardButton("🔙 Boshqa mavzular", callback_data="back_to_semester")
         )
         bot.send_message(
             chat_id,
@@ -400,7 +390,7 @@ def main_menu_btn(message):
 def help_handler(message):
     text = (
         "ℹ️ <b>Bot haqida:</b>\n\n"
-        "Bu bot Farmakologiya va OXTA fanlaridan o'quv materiallarini yuboradi.\n\n"
+        "Bu bot Farmakologiya fanidan o'quv materiallarini yuboradi.\n\n"
         "<b>Foydalanish:</b>\n"
         "• /start — Asosiy menyuni ochish\n"
         "• Mavzuni tanlang → materiallar darhol yuboriladi\n\n"
@@ -426,13 +416,11 @@ def admin_panel(message):
         "<code>/add f1 3</code> — Farma 1-semestr, 3-mavzu\n"
         "<code>/add f2 5</code> — Farma 2-semestr, 5-mavzu\n"
         "<code>/add f1 mt1</code> — Farma 1-semestr, MT1\n"
-        "<code>/add f2 ad</code> — Farma adabiyotlari\n"
-        "<code>/add oxta 7</code> — OXTA 7-mavzu\n"
-        "<code>/add oxta ad</code> — OXTA adabiyotlari\n\n"
+        "<code>/add f2 ad</code> — Farma adabiyotlari\n\n"
         "<b>Boshqa buyruqlar:</b>\n"
         "<code>/list</code> — Barcha saqlangan mavzular\n"
         "<code>/remove f1 3 &lt;msg_id&gt;</code> — Bitta xabarni o'chirish\n"
-        "<code>/clear oxta 7</code> — Mavzuni to'liq tozalash\n\n"
+        "<code>/clear f1 3</code> — Mavzuni to'liq tozalash\n\n"
         "<b>Kanal uchun post yaratish:</b>\n"
         "<code>/post</code> — Interaktiv post yaratuvchi\n"
         "<code>/deeplink f1 3</code> — Tez havola yaratish\n"
@@ -471,7 +459,6 @@ def post_builder_start(message):
         types.InlineKeyboardButton("💊 Farma 1-sem", callback_data="post_fan_f1"),
         types.InlineKeyboardButton("💊 Farma 2-sem", callback_data="post_fan_f2"),
     )
-    markup.add(types.InlineKeyboardButton("🔬 OXTA", callback_data="post_fan_oxta"))
     markup.add(types.InlineKeyboardButton("❌ Bekor qilish", callback_data="post_cancel"))
 
     bot.send_message(
@@ -504,7 +491,7 @@ def post_fan_selected(call):
     admin_states[uid]["alias"] = alias
     admin_states[uid]["step"] = "choose_mavzu"
 
-    fan_names = {"f1": "Farmakologiya 1-semestr", "f2": "Farmakologiya 2-semestr", "oxta": "OXTA"}
+    fan_names = {"f1": "Farmakologiya 1-semestr", "f2": "Farmakologiya 2-semestr"}
     fan_label = fan_names.get(fan, fan)
 
     markup = types.InlineKeyboardMarkup()
@@ -582,7 +569,7 @@ def post_mavzu_selected(call):
     )
     markup.add(types.InlineKeyboardButton("❌ Bekor qilish", callback_data="post_cancel"))
 
-    fan_names = {"f1": "Farmakologiya 1-sem", "f2": "Farmakologiya 2-sem", "oxta": "OXTA"}
+    fan_names = {"f1": "Farmakologiya 1-sem", "f2": "Farmakologiya 2-sem"}
     fan_label = fan_names.get(state["fan"], state["fan"])
 
     safe_edit(
@@ -706,22 +693,21 @@ def post_receive_btn_text(message):
 
     deep_link = f"https://t.me/{bot_username}?start={key}"
 
-    # Build the post
-    markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton(btn_text, url=deep_link))
+    state["btn_text"] = btn_text
+    state["deep_link"] = deep_link
+    state["markup"] = markup
 
-    fan_names = {"f1": "Farma 1-sem", "f2": "Farma 2-sem", "oxta": "OXTA"}
+    fan_names = {"f1": "Farma 1-sem", "f2": "Farma 2-sem"}
     fan_label = fan_names.get(state["fan"], state["fan"])
     label = state.get("label", "")
 
+    # Send preview to admin
     bot.send_message(
         message.chat.id,
-        f"✅ <b>Post tayyor!</b> — {fan_label}, {label}\n\n"
-        f"Quyidagi postni kanalga <b>forward</b> qiling: 👇",
+        f"👁 <b>Post namunasi:</b> — {fan_label}, {label}",
         parse_mode='HTML'
     )
 
-    # Send the actual post (photo or text-only)
     if state.get("photo_id"):
         bot.send_photo(
             message.chat.id,
@@ -738,8 +724,104 @@ def post_receive_btn_text(message):
             parse_mode='HTML'
         )
 
-    # Clean up state
-    del admin_states[uid]
+    # Action menu: publish directly to channel!
+    default_chan = config.REQUIRED_CHANNELS[0] if config.REQUIRED_CHANNELS else "@RavonRivojlanish"
+    state["default_channel"] = default_chan
+
+    action_kb = types.InlineKeyboardMarkup()
+    action_kb.add(types.InlineKeyboardButton(f"🚀 {default_chan} ga chop etish", callback_data="post_pub_default"))
+    action_kb.add(types.InlineKeyboardButton("✏️ Boshqa kanalga chop etish", callback_data="post_pub_custom"))
+    action_kb.add(types.InlineKeyboardButton("❌ Bekor qilish", callback_data="post_cancel"))
+
+    bot.send_message(
+        message.chat.id,
+        "👇 <b>Quyidagi tugma orqali postni to'g'ridan-to'g'ri kanalga chiqaring:</b>\n"
+        "<i>(Bot kanal nomidan toza post qiladi, tugmasi yo'qolmaydi va «Forwarded from» yozuvi chiqmaydi)</i>",
+        reply_markup=action_kb,
+        parse_mode='HTML'
+    )
+
+
+@bot.callback_query_handler(func=lambda call: call.data == "post_pub_default")
+def post_publish_default_handler(call):
+    uid = call.from_user.id
+    if not is_admin(uid) or uid not in admin_states:
+        return
+    try:
+        bot.answer_callback_query(call.id)
+    except Exception:
+        pass
+
+    state = admin_states[uid]
+    channel = state.get("default_channel", "@RavonRivojlanish")
+    _publish_post_to_channel(call.message.chat.id, uid, channel)
+
+
+@bot.callback_query_handler(func=lambda call: call.data == "post_pub_custom")
+def post_publish_custom_handler(call):
+    uid = call.from_user.id
+    if not is_admin(uid) or uid not in admin_states:
+        return
+    try:
+        bot.answer_callback_query(call.id)
+    except Exception:
+        pass
+
+    admin_states[uid]["step"] = "waiting_target_channel"
+    safe_edit(
+        call.message.chat.id, call.message.message_id,
+        "📢 <b>Post chiqariladigan kanal username yoki ID sini yuboring:</b>\n\n"
+        "Masalan: <code>@RavonRivojlanish</code>\n\n"
+        "<i>(Bot o'sha kanalda admin bo'lishi kerak!)</i>\n"
+        "<i>Bekor qilish uchun /cancel yozing.</i>",
+        None
+    )
+
+
+@bot.message_handler(func=lambda m: m.from_user.id in admin_states and admin_states.get(m.from_user.id, {}).get("step") == "waiting_target_channel" and m.content_type == "text" and not m.text.startswith("/"))
+def post_receive_target_channel(message):
+    uid = message.from_user.id
+    channel = message.text.strip()
+    _publish_post_to_channel(message.chat.id, uid, channel)
+
+
+def _publish_post_to_channel(notify_chat_id, uid, channel):
+    if uid not in admin_states:
+        return
+    state = admin_states[uid]
+
+    try:
+        if state.get("photo_id"):
+            bot.send_photo(
+                chat_id=channel,
+                photo=state["photo_id"],
+                caption=state["text"],
+                reply_markup=state["markup"],
+                parse_mode='HTML'
+            )
+        else:
+            bot.send_message(
+                chat_id=channel,
+                text=state["text"],
+                reply_markup=state["markup"],
+                parse_mode='HTML'
+            )
+
+        bot.send_message(
+            notify_chat_id,
+            f"🎉 <b>Muvaffaqiyatli chop etildi!</b>\n\n"
+            f"Post <b>{channel}</b> kanaliga joylandi. Tugmasi to'liq ishlamoqda!",
+            parse_mode='HTML'
+        )
+        del admin_states[uid]
+
+    except ApiTelegramException as e:
+        bot.send_message(
+            notify_chat_id,
+            f"❌ <b>Kanalga post yuborishda xatolik:</b>\n<code>{e}</code>\n\n"
+            f"<b>Eslatma:</b> Bot <b>{channel}</b> kanalida <b>Administrator</b> bo'lishi va «Post Messages» (Xabar yozish) huquqi yoqilgan bo'lishi shart!",
+            parse_mode='HTML'
+        )
 
 
 @bot.message_handler(commands=['deeplink'])
@@ -753,7 +835,7 @@ def admin_deeplink(message):
         bot.reply_to(
             message,
             "Format: <code>/deeplink &lt;fan&gt; &lt;mavzu&gt;</code>\n"
-            "Misol: <code>/deeplink f1 3</code> yoki <code>/deeplink oxta 7</code>",
+            "Misol: <code>/deeplink f1 3</code> yoki <code>/deeplink f2 5</code>",
             parse_mode='HTML'
         )
         return
@@ -804,7 +886,6 @@ def admin_deeplink(message):
         "farma": "💊 Farmakologiya 1-semestr",
         "f2": "💊 Farmakologiya 2-semestr",
         "farma2": "💊 Farmakologiya 2-semestr",
-        "oxta": "🔬 OXTA",
     }
     fan_name = fan_names.get(fan, fan.upper())
 
@@ -833,35 +914,66 @@ def admin_deeplink(message):
 
 
 
-@bot.message_handler(commands=['add'])
-def admin_add(message):
-    """Add a material. Must be a reply to the message in the source channel."""
-    if not is_admin(message.from_user.id):
-        return
+def parse_add_args(text: str):
+    """
+    Parses various /add command formats:
+    - /add f1 3
+    - /add_f1_3
+    - /addf13
+    - /add f2 mt1
+    - /add f1 ad
+    - /add f1 3 457 (with explicit msg_id)
+    Returns: (fan, mavzu, explicit_msg_id) or (None, None, None)
+    """
+    if not text:
+        return None, None, None
+    text = text.strip()
+    text = re.sub(r'^/add(@\w+)?', '/add', text, flags=re.IGNORECASE)
 
-    # Must be a reply
-    if not message.reply_to_message:
-        bot.reply_to(message,
-            "❌ Bu buyruqni ishlating:\n"
-            "Kanalda postga <b>reply</b> qilib <code>/add f1 3</code> yozing.",
+    # /add_f1_3 or /add_f1_3_457
+    m1 = re.match(r'^/add_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)(?:_(\d+))?$', text, re.IGNORECASE)
+    if m1:
+        return m1.group(1).lower(), m1.group(2).lower(), (int(m1.group(3)) if m1.group(3) else None)
+
+    # /addf13 or /addf1_3
+    m2 = re.match(r'^/add([a-zA-Z]+\d*)_?([a-zA-Z0-9]+)$', text, re.IGNORECASE)
+    if m2 and m2.group(1).lower() in config.TOPIC_ALIASES:
+        return m2.group(1).lower(), m2.group(2).lower(), None
+
+    # /add f1 3 [msg_id]
+    parts = text.split()
+    if len(parts) >= 3 and parts[0].lower() == '/add':
+        explicit_id = int(parts[3]) if len(parts) >= 4 and parts[3].isdigit() else None
+        return parts[1].lower(), parts[2].lower(), explicit_id
+
+    return None, None, None
+
+
+def handle_add_action(message, is_channel_post=False):
+    # Security check: if not channel post, verify user is admin
+    if not is_channel_post:
+        if not message.from_user or not is_admin(message.from_user.id):
+            return
+
+    text = message.text or message.caption or ""
+    fan, mavzu, explicit_id = parse_add_args(text)
+
+    if not fan or not mavzu:
+        bot.reply_to(
+            message,
+            "❌ <b>Format noto'g'ri!</b>\n"
+            "To'g'ri format: <code>/add f1 3</code> yoki <code>/add f2 5</code>\n"
+            "<i>(Xabarga reply qilib yozing yoki xabar ID sini qo'shing: /add f1 3 457)</i>",
             parse_mode='HTML'
         )
         return
 
-    parts = message.text.strip().split()
-    if len(parts) < 3:
-        bot.reply_to(message, "❌ Format: <code>/add &lt;fan&gt; &lt;mavzu&gt;</code>\nMisol: <code>/add f1 3</code>", parse_mode='HTML')
-        return
-
-    fan = parts[1].lower()
-    mavzu = parts[2].lower()
-
     alias = config.TOPIC_ALIASES.get(fan)
     if not alias:
-        bot.reply_to(message, f"❌ Noma'lum fan: <code>{fan}</code>\nMavjud: {', '.join(config.TOPIC_ALIASES.keys())}", parse_mode='HTML')
+        valid_fans = ", ".join(config.TOPIC_ALIASES.keys())
+        bot.reply_to(message, f"❌ Noma'lum fan: <code>{fan}</code>\nMavjud: {valid_fans}", parse_mode='HTML')
         return
 
-    # Determine the key
     if mavzu == "ad":
         key = alias["ad_key"]
     elif mavzu.startswith("mt"):
@@ -881,17 +993,40 @@ def admin_add(message):
         bot.reply_to(message, "❌ Mavzu noto'g'ri. Raqam, 'ad' yoki 'mt1' kabi yozing.")
         return
 
-    msg_id = message.reply_to_message.message_id
-    raw_text = message.reply_to_message.caption or message.reply_to_message.text or ""
-    cleaned_caption = strip_hashtags(raw_text)
+    # Determine message ID and caption
+    msg_id = None
+    raw_caption = ""
+
+    if explicit_id:
+        msg_id = explicit_id
+    elif message.reply_to_message:
+        reply = message.reply_to_message
+        msg_id = getattr(reply, 'forward_from_message_id', None) or reply.message_id
+        raw_caption = reply.caption or reply.text or ""
+    else:
+        bot.reply_to(
+            message,
+            "❌ <b>Xabar aniqlanmadi!</b>\n\n"
+            "Biror xabarga <b>Reply</b> qilib <code>/add f1 3</code> deb yozing\n"
+            "yoki xabar ID sini qo'shib yozing: <code>/add f1 3 457</code>",
+            parse_mode='HTML'
+        )
+        return
+
+    cleaned_caption = strip_hashtags(raw_caption)
 
     with mapping_lock:
         added = storage.add_message(key, msg_id, caption=cleaned_caption if cleaned_caption else None)
 
     if added:
-        bot.reply_to(message, f"✅ Xabar <b>#{msg_id}</b> → <code>{key}</code> ga saqlandi (heshteglar tozalandi).", parse_mode='HTML')
+        bot.reply_to(message, f"✅ Xabar <b>#{msg_id}</b> → <code>{key}</code> ga saqlandi!", parse_mode='HTML')
     else:
         bot.reply_to(message, f"ℹ️ Xabar <b>#{msg_id}</b> allaqachon <code>{key}</code> da mavjud.", parse_mode='HTML')
+
+
+@bot.message_handler(func=lambda m: m.text and m.text.lower().startswith('/add'))
+def admin_add_msg(message):
+    handle_add_action(message, is_channel_post=False)
 
 
 @bot.message_handler(commands=['remove'])
@@ -1038,7 +1173,7 @@ def callback_handler(call):
     if data == "back_to_category":
         send_category_menu(chat_id, message_id)
 
-    elif data in ("category_fundamental", "back_to_fundamental"):
+    elif data == "category_fundamental":
         safe_edit(chat_id, message_id, "📂 <b>Fanni tanlang:</b>", kb_fundamental())
 
     elif data == "category_klinik":
@@ -1055,16 +1190,6 @@ def callback_handler(call):
 
     elif data in ("back_to_subject", "subject_farmakologiya"):
         safe_edit(chat_id, message_id, "💊 <b>Farmakologiya — bo'limni tanlang:</b>", kb_farmakologiya())
-
-    elif data == "subject_oxta":
-        text = (
-            "🔬 <b>OXTA (Topografik Anatomiya va Operativ Xirurgiya)</b>\n\n"
-            "Ushbu fan bo'yicha barcha video darslar, taqdimotlar (slaydlar), konspektlar va darsliklar "
-            "tizimli ravishda maxsus alohida botimizga joylangan.\n\n"
-            "Barcha materiallardan qulay va to'liq foydalanish uchun quyidagi tugma orqali "
-            "maxsus botimizga o'ting: 👇"
-        )
-        safe_edit(chat_id, message_id, text, kb_oxta())
 
     elif data == "semester_1":
         safe_edit(chat_id, message_id, config.SEMESTER_1_TEXT, kb_semester(1))
@@ -1101,19 +1226,22 @@ def source_material_handler(message):
         return
 
     text = message.text or message.caption or ""
+
+    # Check if this is an /add command in the channel!
+    if text.strip().lower().startswith('/add'):
+        handle_add_action(message, is_channel_post=True)
+        return
+
     key = None
 
     # Hashtag patterns (backward compatibility)
     m_farma = re.search(r'#farma_([\w]+)', text, re.IGNORECASE)
     m_mavzu = re.search(r'#mavzu(\d+)', text, re.IGNORECASE)
-    m_oxta  = re.search(r'#oxta_([\w]+)', text, re.IGNORECASE)
 
     if m_farma:
         key = m_farma.group(1).lower()
     elif m_mavzu:
         key = m_mavzu.group(1)
-    elif m_oxta:
-        key = f"oxta_{m_oxta.group(1).lower()}"
 
     if key:
         cleaned_caption = strip_hashtags(text)

@@ -99,27 +99,6 @@ SEMESTER_2_MT = [
 ]
 
 # ══════════════════════════════════════════
-# OXTA mavzulari
-# ══════════════════════════════════════════
-OXTA_TEXT = """<b>🔬 OXTA — Topografik Anatomiya va Operativ Xirurgiya:</b>
-
-<b>1-mavzu:</b> Kirish va jarrohlik asboblari
-<b>2-mavzu:</b> Qo'l topografik anatomiyasi
-<b>3-mavzu:</b> Oyoq topografik anatomiyasi
-<b>4-mavzu:</b> Qo'l va oyoq operativ xirurgiyasi
-<b>5-mavzu:</b> Amputatsiya va ekzartikulyatsiya
-<b>6-mavzu:</b> Bosh (miya qismi) xirurgiyasi
-<b>7-mavzu:</b> Bosh (yuz qismi) xirurgiyasi
-<b>8-mavzu:</b> Bo'yin sohasi xirurgiyasi
-<b>9-mavzu:</b> Ko'krak qafasi xirurgiyasi
-<b>10-mavzu:</b> Ko'krak bo'shlig'i a'zolari
-<b>11-mavzu:</b> Qorin sohasi xirurgiyasi
-<b>12-mavzu:</b> Qorin bo'shlig'i a'zolari
-<b>13-mavzu:</b> Ichaklar operativ xirurgiyasi
-<b>14-mavzu:</b> Bel va qorin parda orti sohasi
-<b>15-mavzu:</b> Tos sohasi anatomiyasi"""
-
-# ══════════════════════════════════════════
 # Admin panel: valid topic keys
 # ══════════════════════════════════════════
 # Maps short admin commands to internal keys
@@ -131,6 +110,4 @@ TOPIC_ALIASES = {
     # Farmakologiya 2-semestr
     "farma2": {"prefix": "s2", "max": 9, "mt_ids": ["s2_mt1", "s2_mt2", "s2_mt3", "s2_mt4"], "ad_key": "ad"},
     "f2":     {"prefix": "s2", "max": 9, "mt_ids": ["s2_mt1", "s2_mt2", "s2_mt3", "s2_mt4"], "ad_key": "ad"},
-    # OXTA
-    "oxta": {"prefix": "oxta_mavzu", "max": 15, "mt_ids": [], "ad_key": "oxta_adabiyotlar"},
 }
