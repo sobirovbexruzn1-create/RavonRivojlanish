@@ -729,11 +729,13 @@ def post_receive_btn_text(message):
         )
 
     # Action menu: publish directly to channel!
-    default_chan = config.REQUIRED_CHANNELS[0] if config.REQUIRED_CHANNELS else "@RavonRivojlanish"
+    default_chan = config.REQUIRED_CHANNELS[0] if config.REQUIRED_CHANNELS else "@Ravon_Rivojlanish"
     state["default_channel"] = default_chan
 
     action_kb = types.InlineKeyboardMarkup()
-    action_kb.add(types.InlineKeyboardButton(f"🚀 {default_chan} ga chop etish", callback_data="post_pub_default"))
+    action_kb.add(types.InlineKeyboardButton("📢 @Ravon_Rivojlanish (Asosiy kanal)", callback_data="post_pub_main"))
+    if default_chan != "@Ravon_Rivojlanish":
+        action_kb.add(types.InlineKeyboardButton(f"🚀 {default_chan} ga chop etish", callback_data="post_pub_default"))
     action_kb.add(types.InlineKeyboardButton("✏️ Boshqa kanalga chop etish", callback_data="post_pub_custom"))
     action_kb.add(types.InlineKeyboardButton("❌ Bekor qilish", callback_data="post_cancel"))
 
@@ -744,6 +746,19 @@ def post_receive_btn_text(message):
         reply_markup=action_kb,
         parse_mode='HTML'
     )
+
+
+@bot.callback_query_handler(func=lambda call: call.data == "post_pub_main")
+def post_publish_main_handler(call):
+    uid = call.from_user.id
+    if not is_admin(uid) or uid not in admin_states:
+        return
+    try:
+        bot.answer_callback_query(call.id)
+    except Exception:
+        pass
+
+    _publish_post_to_channel(call.message.chat.id, uid, "@Ravon_Rivojlanish")
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "post_pub_default")
@@ -757,7 +772,7 @@ def post_publish_default_handler(call):
         pass
 
     state = admin_states[uid]
-    channel = state.get("default_channel", "@RavonRivojlanish")
+    channel = state.get("default_channel", "@Ravon_Rivojlanish")
     _publish_post_to_channel(call.message.chat.id, uid, channel)
 
 
